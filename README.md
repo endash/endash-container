@@ -56,15 +56,6 @@ car = Automobile.new(Powertrain.new(Engine.new))
 
 Imagine this littered all over your code, wherever you instantiate a class. Of course, you can partially clean this up with various factory methods or such. No matter which way you slice that bacon, though, you end up with a bunch of code somewhere with knowledge of how these classes tie together, and you probably still are left with a handful of tightly defined, hard-coded combinations. A container helps solve the glue-code and hard-code problems by: (1) Maintaining a dependency graph, so it can handle finding or instantiating all necessary dependencies on demand and (2) Allowing an implementation to be dynamically substituted for a given dependency, at any point in the graph.
 
-The second point can help significantly with testing. With DI, it's simple enough to inject a double into a unit test or small integration test. You can (and probably should) construct the required objects manually. The larger the scale gets the less we can fake and still be left with a valid test, so this becomes less of a concern. There's always something that needs to be faked, though, particularly with third party services.
-
-Imagine testing against a payment service. Sure, they provide fake API keys but (1) it's significantly slower than it needs to be for a large test suite and (2) I'd personally feel much safer simply cutting them out of the majority of tests entirely, rather than relying on juggling different sets of keys that may require maintenance. (Note that integration with the third party service would still be covered under separate tests focused on the payments module exclusively, and a subset of acceptance tests could use it directly as well for further assurance.) The traditional approach here is to stub. Stub `Global.new`, stub `Global#execute`, stub anything, and then stub stub stub some more. With a container you avoid that disaster entirely, and replace any dependency—regardless of how deep—nearly transparently:
-
-```ruby
-test_container = Container.new(appContainer, {PaymentBridge => FakePaymentBridge})
-app = test_container.get(MyApp)
-```
-
 ## Using `Container`
 
 `Container` is initialized with a hash of injection mappings. Regardless of its mappings—or lack thereof—a container will instantiate classes when it encounters them:
