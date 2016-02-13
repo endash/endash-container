@@ -2,6 +2,30 @@ require 'endash-container'
 require 'minitest/autorun'
 
 class TestContainer < Minitest::Test
+  def test_has_with_string
+    container = Container.new({"foo" => "Bar"})
+
+    assert container.has?("foo")
+  end
+
+  def test_has_with_nested_token
+    container = Container.new({bar: {"foo" => "Bar"}})
+
+    assert container.has?("bar.foo")
+  end
+
+  def test_has_with_literal_dot_token
+    container = Container.new({"bar.foo" => "Bar"})
+
+    assert container.has?("bar.foo")
+  end
+
+  def test_has_with_literal_dot_token_as_symbol
+    container = Container.new({:"bar.foo" => "Bar"})
+
+    assert container.has?("bar.foo")
+  end
+
   def test_empty_container_instantiates_classes
     fooClass = Class.new
     container = Container.new()

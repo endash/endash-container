@@ -8,24 +8,11 @@ class Container
     end
   end
 
-  class Token
-    attr_reader :token
-
-    def initialize token
-      @token = token
-    end
-  end
+  Token = Struct.new(:token)
+  Value = Struct.new(:value)
 
   def self.token(token)
     Token.new(token)
-  end
-
-  class Value
-    attr_reader :value
-
-    def initialize value
-      @value = value
-    end
   end
 
   def self.value(value)
@@ -50,11 +37,7 @@ class Container
   end
 
   def has? token
-    if token.is_a?(String)
-      @has_cache[token] ||= !find_token(token).nil?
-    else
-      @injections.has_key?(token)
-    end
+    @has_cache[token] ||= @injections.has_key?(token) || (token.is_a?(String) && !!find_string_token(token))
   end
 
   def get token
@@ -63,10 +46,14 @@ class Container
 
   protected
 
-  def find_token(token)
-    token_tree = token.split(".").map(&:to_sym)
+  def find_string_token(token)
+    @injections[token] || @injections[token.to_sym] || find_nested_token(token)
+  end
+
+  def find_nested_token(token)
+    token_tree = token.split(".")
     token_tree.reduce(@injections) do |current_level, token|
-      current_level && current_level[token]
+      current_level && (current_level[token] || current_level[token.to_sym])
     end
   rescue
     nil
@@ -102,7 +89,7 @@ class Container
   def get_injection(token)
     @injections_cache[token] ||= begin
       if token.is_a?(String)
-        injection = find_token(token)
+        injection = find_string_token(token)
       else
         injection = @injections[token]
       end
