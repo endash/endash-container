@@ -8,6 +8,12 @@ class TestContainer < Minitest::Test
     assert container.has?("foo")
   end
 
+  def test_has_with_symbol
+    container = Container.new({"foo" => "Bar"})
+
+    assert container.has?(:foo)
+  end
+
   def test_has_with_nested_token
     container = Container.new({bar: {"foo" => "Bar"}})
 

@@ -47,7 +47,7 @@ class Container
   protected
 
   def find_string_token(token)
-    @injections[token] || @injections[token.to_sym] || find_nested_token(token)
+    @injections[token.to_sym] || find_nested_token(token)
   end
 
   def find_nested_token(token)
@@ -61,11 +61,13 @@ class Container
 
   def normalize_injections(injections_hash)
     injections_hash.each_with_object({}) do |(key, injection), h|
+      new_key = key.is_a?(String) ? key.to_sym : key
+
       case injection
       when Hash
-        h[key] = normalize_injections(injection)
+        h[new_key] = normalize_injections(injection)
       else
-        h[key] = normalize_injection(injection)
+        h[new_key] = normalize_injection(injection)
       end
     end
   end
