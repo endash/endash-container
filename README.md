@@ -1,5 +1,7 @@
 # endash-container
 
+[![Code Climate](https://codeclimate.com/github/endash/endash-container/badges/gpa.svg)](https://codeclimate.com/github/endash/endash-container)
+
 This gem provides a `Container` class, a simple containerized approach to dependency injection for Ruby. This is currently considered unstable software under active development and all features and APIs are subject to change.
 
 ### A container? This isn't C#, we don't need no stinkin' container.
