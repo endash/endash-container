@@ -5,6 +5,7 @@ require 'minitest/autorun'
 class TestInjections < Minitest::Test
   Bar = Class.new
   Foobar = Class.new
+  Barbaz = Class.new
 
   def test_basic_class_injection
     fooClass = Class.new do
@@ -36,6 +37,38 @@ class TestInjections < Minitest::Test
 
     foo = container.get(fooClass)
     assert_instance_of Foobar, foo.bar
+  end
+
+  def test_default_class_injection
+    fooClass = Class.new do
+      attr_reader :bar
+
+      inject(Bar => Foobar)
+      def initialize bar
+        @bar = bar
+      end
+    end
+
+    container = Container.new()
+
+    foo = container.get(fooClass)
+    assert_instance_of Foobar, foo.bar
+  end
+
+  def test_overriden_default_class_injection
+    fooClass = Class.new do
+      attr_reader :bar
+
+      inject(Bar => Foobar)
+      def initialize bar
+        @bar = bar
+      end
+    end
+
+    container = Container.new(Bar => Barbaz)
+
+    foo = container.get(fooClass)
+    assert_instance_of Barbaz, foo.bar
   end
 
   def test_injected_token

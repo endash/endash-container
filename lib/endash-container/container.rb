@@ -9,6 +9,7 @@ class Container
   end
 
   Token = Struct.new(:token)
+  ForwardReference = Struct.new(:token)
   Value = Struct.new(:value)
 
   def self.token(token)
@@ -17,6 +18,10 @@ class Container
 
   def self.value(value)
     Value.new(value)
+  end
+
+  def self.advance(token)
+    ForwardReference.new(token)
   end
 
   NoSuchToken = Class.new(StandardError)
@@ -37,7 +42,7 @@ class Container
   end
 
   def has? token
-    @has_cache[token] ||= @injections.has_key?(token) || (token.is_a?(String) && !!find_string_token(token))
+    @has_cache[token] ||= has_token?(token)
   end
 
   def get token
@@ -46,14 +51,18 @@ class Container
 
   protected
 
+  def has_token?(token)
+    @injections.has_key?(token) || (token.is_a?(String) && !!find_string_token(token))
+  end
+
   def find_string_token(token)
     @injections[token.to_sym] || find_nested_token(token)
   end
 
   def find_nested_token(token)
     token_tree = token.split(".")
-    token_tree.reduce(@injections) do |current_level, token|
-      current_level && (current_level[token] || current_level[token.to_sym])
+    token_tree.reduce(@injections) do |current_level, token_|
+      current_level && (current_level[token_] || current_level[token_.to_sym])
     end
   rescue
     nil
@@ -104,12 +113,26 @@ class Container
     end
   end
 
+  def normalize_inline_injections(injections)
+    injections.inject([]) do |arr, injection|
+      case injection
+      when Hash
+        arr + injection.each_pair.map do |(token, default)|
+          has_token?(token) ? token : default
+        end
+      else
+        arr + [injection]
+      end
+    end
+  end
+
+
   def normalize_injection(injection)
     case injection
     when Injection
       injection
     when Token
-      Injection.new(injection.token) { |injection| injection }
+      Injection.new(injection.token) { |injection_| injection_ }
     when Value
       Injection.new { injection.value }
     when Array
@@ -121,7 +144,7 @@ class Container
       end
     when Class
       if injection.respond_to?(:_inline_injections_)
-        inline_injections = injection._inline_injections_
+        inline_injections = normalize_inline_injections(injection._inline_injections_)
       else
         inline_injections = []
       end
@@ -139,7 +162,7 @@ class Container
   def resolve(token, injection)
     flattened = flatten(token, injection)
 
-    if has?(token) || flattened.keys.any? { |token| has?(token) } || !@parent
+    if has_token?(token) || flattened.keys.any? { |token_| has_token?(token_) } || !@parent
       resolved_dependencies = injection.dependencies.map do |dep|
         lookup(dep)
       end
