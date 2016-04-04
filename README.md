@@ -267,7 +267,24 @@ container.get(Bar) == container.get(Foo).bar
 
 Note that `Bar` in `inject(Bar)` is a token, not a mapping itself, so it doesn't need to be wrapped in `Container.token` to ensure a single instance.
 
+## Default inline injections
 
+You can also specify a generic token as an inline injection, mapped to a more specific default token that can be overridden on the container. For instance, you may want to have something akin to interface tokens:
 
+```ruby
+ISerializationStrategy = {}.freeze
+IMessageHandler = {}.freeze
+```
 
+and use them to auto-inject your implementations:
 
+```ruby
+class Foo
+	inject(IMessageHandler => AppMessageHandler)
+	def initialize(message_handler)
+		@message_handler = message_handler
+	end
+end
+```
+
+If an `IMessageHandler` is registered on the container, this is equivalent to `inject(IMessageHandler)` and whatever injection is registered on the container will be used. If not, then this is equivalent to `inject(AppMessageHandler)`. As above, if `AppMessageHandler` is registered on the container, then that injection is used. Otherwise, the default behaviour for an unregistered class token remains auto-instantiation.
