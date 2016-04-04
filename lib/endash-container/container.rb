@@ -27,7 +27,7 @@ class Container
   NoSuchToken = Class.new(StandardError)
   TokenNotResolved = Class.new(StandardError)
 
-  def initialize parent = {}, injections = {}
+  def initialize(parent = {}, injections = {})
     unless parent.is_a?(Container)
       injections = parent
       parent = nil
@@ -39,14 +39,23 @@ class Container
     @resolved = {}
     @flatten_cache = {}
     @has_cache = {}
+    @mutex = Mutex.new
   end
 
-  def has? token
-    @has_cache[token] ||= has_token?(token)
+  def has?(token)
+    return @has_cache[token] if @has_cache.has_key?(token)
+
+    @mutex.synchronize do
+      @has_cache[token] = has_token?(token)
+    end
   end
 
-  def get token
-    lookup(token)
+  def get(token)
+    return @resolved[token] if @resolved.has_key?(token)
+
+    @mutex.synchronize do
+      lookup(token)
+    end
   end
 
   protected
